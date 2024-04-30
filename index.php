@@ -11,7 +11,7 @@ require_once('utils.php');
 $pagestatus = 0;
 
 // Tallennetaan perusosoite muuttujaan
-$baseurl = "https://neutroni.hayo.fi/~akoivu/redirect/";
+$baseurl = "https://neutroni.hayo.fi/~akoivu/redirect-custom/";
 
 // Määritellään yhteys-muuttujat.
 // Tietokannan nimi, käyttäjä ja salasana, haetaan palvelimen ympäristömuuttujista.
@@ -180,7 +180,7 @@ if (isset($_GET["hash"])) {
                 <div class='error'>
                     <h2>NYT KÄVI HASSUSTI!</h2>
                     <p>Nostamme käden ylös virheen merkiksi, palvelimellamme on pientä hässäkkää. Ole hyvä ja kokeile myöhemmin uudelleen.</p>
-                    <p>(virheilmoitus: <?=$error?>)</p>
+                    <p>Virheilmoitus:<br><?=$error?></p>
                 </div>
             <?php 
                 }
@@ -199,7 +199,7 @@ if (isset($_GET["hash"])) {
 
         <footer>
             <hr>
-            &copy; Kurpitsa Solutions
+            &copy; ansu
         </footer>
 
     </div>
