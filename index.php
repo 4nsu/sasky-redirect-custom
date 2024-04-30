@@ -189,7 +189,7 @@ if (isset($_GET["hash"])) {
             ?>
                 <div class='finish'>
                     <h2>JIPPII!</h2>
-                    <p>Loit itsellesi uuden lyhytosoitteen, aivan mahtava juttu! Jatkossa voit käyttää seuraavaa osoitetta: <div class='code'><?=$shorturl?></div></p>
+                    <p>Loit itsellesi uuden lyhytosoitteen, aivan mahtava juttu! Jatkossa voit käyttää seuraavaa osoitetta: <div class='code'><a href="<?=$shorturl?>"><?=$shorturl?></a></div></p>
                     <p>Voit tehdä uuden lyhytosoitteen <a href="<?=$baseurl?>">täällä</a>.</p>
                 </div>
             <?php
