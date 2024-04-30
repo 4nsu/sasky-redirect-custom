@@ -1,0 +1,10 @@
+# Täälä ohjeita web-palvelimelle.
+
+# uudelleenohjauksen säännöt otetaan käyttöön
+RewriteEngine On
+# jos pyynnössä oleva tiedosto on olemassa, Rewriterule-sääntöä ei sovelleta
+RewriteCond %{REQUEST_FILENAME} !-f
+# sama mutta hakemistoille
+RewriteCond %{REQUEST_FILENAME} !-d
+# määritellään index.php-skriptin kutsu välittämään alkuperäisen osoitteen loppuosa hash-parametrille
+RewriteRule ^(.*)$ index.php?hash=$1 [L]
