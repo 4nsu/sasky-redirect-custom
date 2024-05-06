@@ -167,7 +167,7 @@ if (isset($_GET["hash"])) {
                     <form action='' method='POST'>
                         <label for='url'>Syötä lyhennettävä osoite</label>
                         <div class='url'>
-                            <input type='text' name='url' placeholder='tosi pitkä osoite'>
+                            <input type='text' id='url' name='url' placeholder='tosi pitkä osoite'>
                             <input type='submit' name='shorten' value='lyhennä'>
                         </div>
                     </form>
