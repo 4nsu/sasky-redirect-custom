@@ -13,6 +13,10 @@ $pagestatus = 0;
 // Tallennetaan perusosoite muuttujaan
 $baseurl = "https://neutroni.hayo.fi/~akoivu/redirect-custom/";
 
+// Esitellään muuttuja johon tarvittaessa tallennetaan virheviesti,
+// jos url on virheellinen.
+$urlerror = "";
+
 // Määritellään yhteys-muuttujat.
 // Tietokannan nimi, käyttäjä ja salasana, haetaan palvelimen ympäristömuuttujista.
 $dsn = "mysql:host=localhost;dbname={$_SERVER['DB_DATABASE']};charset=utf8mb4";
@@ -30,54 +34,60 @@ $options = [
 // Tarkistetaan onko lyhennys-nappia painettu.
 if (isset($_POST["shorten"])) {
 
-    $url = $_POST["url"];
+    // Tarkistetaan onko url annettu oikeassa muodossa.
+    if (preg_match("/\b(?:(?:https?|ftp):\/\/)[-\p{L}0-9+&@#\/%?=~_|!:,.;]*[-\p{L}0-9+&@#\/%=~_|]/iu", $_POST["url"])) {
 
-    try {
-        // Tietokantayhteyden avaus.
-        $yhteys = new PDO($dsn, $user, $pwd, $options);    
+        $url = $_POST["url"];
+
+        try {
+            // Tietokantayhteyden avaus.
+            $yhteys = new PDO($dsn, $user, $pwd, $options);    
+            
+            // Valmistellaan kysely joka tarkastaa löytyykö lyhytosoite kannasta.
+            $stmt = $yhteys->prepare("SELECT 1 FROM osoite WHERE tunniste = ?");
         
-        // Valmistellaan kysely joka tarkastaa löytyykö lyhytosoite kannasta.
-        $stmt = $yhteys->prepare("SELECT 1 FROM osoite WHERE tunniste = ?");
-      
-        // Esitellään hash muuttuja, johon lyhytosoite tullaan sijoittamaan.
-        $hash = "";
+            // Esitellään hash muuttuja, johon lyhytosoite tullaan sijoittamaan.
+            $hash = "";
 
-        // Luodaan lyhytosoitteita niin kauan kunnes löytyy
-        // sellainen jota kannassa ei vielä ole.
-        while ($hash == "") {
+            // Luodaan lyhytosoitteita niin kauan kunnes löytyy
+            // sellainen jota kannassa ei vielä ole.
+            while ($hash == "") {
 
-            // Muodostetaan lyhytosoite-ehdokas.
-            $generated = generateHash(5);
+                // Muodostetaan lyhytosoite-ehdokas.
+                $generated = generateHash(5);
 
-            // Tarkistetaan, löytyykö lyhytosoitetta kannasta.
-            $stmt->execute([$generated]);
-            $result = $stmt->fetchColumn();
-            if (!$result) {
-                // Lyhytosoitetta ei ole kannassa, tallennetaan sen muuttujaan.
-                $hash = $generated;
+                // Tarkistetaan, löytyykö lyhytosoitetta kannasta.
+                $stmt->execute([$generated]);
+                $result = $stmt->fetchColumn();
+                if (!$result) {
+                    // Lyhytosoitetta ei ole kannassa, tallennetaan sen muuttujaan.
+                    $hash = $generated;
+                }
+
             }
 
+            // Haetaan käyttäjän ip-osoite.
+            $ip = $_SERVER['REMOTE_ADDR'];
+
+            // Alustetaan kantaan lisäys.
+            $stmt2 = $yhteys->prepare("INSERT INTO osoite (tunniste, url, ip) VALUES (?, ?, ?)");
+
+            // Suoritetaan muuttujien arvoilla.
+            $stmt2->execute([$hash, $url, $ip]);
+
+            // Osoite on lisätty kantaan, muodostetaan käyttäjälle tietosivu.
+            $pagestatus = 1;
+            $shorturl = $baseurl . $hash;
+            
+        } catch (PDOException $e) {
+            // Virhe avaamisessa, tulostetaan virheilmoitus.
+            $pagestatus = -2;
+            $error = $e->getMessage();
         }
 
-        // Haetaan käyttäjän ip-osoite.
-        $ip = $_SERVER['REMOTE_ADDR'];
-
-        // Alustetaan kantaan lisäys.
-        $stmt2 = $yhteys->prepare("INSERT INTO osoite (tunniste, url, ip) VALUES (?, ?, ?)");
-
-        // Suoritetaan muuttujien arvoilla.
-        $stmt2->execute([$hash, $url, $ip]);
-
-        // Osoite on lisätty kantaan, muodostetaan käyttäjälle tietosivu.
-        $pagestatus = 1;
-        $shorturl = $baseurl . $hash;
-        
-    } catch (PDOException $e) {
-        // Virhe avaamisessa, tulostetaan virheilmoitus.
-        $pagestatus = -2;
-        $error = $e->getMessage();
-    }    
-
+    } else {
+        $urlerror = "Osoite virheellinen. Syötä osoite muodossa: https://neutroni.hayo.fi";
+    }
 }
 
 // Löytyykö urlista hash-parametri.
@@ -161,6 +171,7 @@ if (isset($_GET["hash"])) {
                             <input type='submit' name='shorten' value='lyhennä'>
                         </div>
                     </form>
+                    <div class='urlerror'><?=$urlerror?></div>
                 </div>
             <?php 
                 }
