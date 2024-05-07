@@ -5,7 +5,7 @@
 function generateHash($length) {
 
     // Määritellään lyhytosoitteessa käytettävät merkit.
-    $chars = "2346789BCDFGHJKMPQRTVWXY";
+    $chars = "234789BCDFGHJKMPQRTVWXYdghkmrt";
 
     // Lasketaan käytettävien merkkien lukumäärä.
     $charcount = strlen($chars);

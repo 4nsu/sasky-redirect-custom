@@ -54,7 +54,7 @@ if (isset($_POST["shorten"])) {
             while ($hash == "") {
 
                 // Muodostetaan lyhytosoite-ehdokas.
-                $generated = generateHash(5);
+                $generated = generateHash(6);
 
                 // Tarkistetaan, löytyykö lyhytosoitetta kannasta.
                 $stmt->execute([$generated]);
