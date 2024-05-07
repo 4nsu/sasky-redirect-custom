@@ -19,6 +19,11 @@ $urlerror = "";
 // ...jos hash virheellinen.
 $hasherror = "";
 
+// Esitellään muuttuja jossa lyhytosoitteen arvo, jos se on annettu
+$omahash = "";
+// Myös osoitteen arvo
+$url = "";
+
 // Määritellään yhteys-muuttujat.
 // Tietokannan nimi, käyttäjä ja salasana, haetaan palvelimen ympäristömuuttujista.
 $dsn = "mysql:host=localhost;dbname={$_SERVER['DB_DATABASE']};charset=utf8mb4";
@@ -36,51 +41,65 @@ $options = [
 // Tarkistetaan onko lyhennys-nappia painettu.
 if (isset($_POST["shorten"])) {
 
+    $omahash = $_POST["omahash"];
+    $url = $_POST["url"];
+
     // Tarkistetaan onko url annettu oikeassa muodossa.
     if (preg_match("/\b(?:(?:https?|ftp):\/\/)[-\p{L}0-9+&@#\/%?=~_|!:,.;]*[-\p{L}0-9+&@#\/%=~_|]/iu", $_POST["url"])) {
 
-        $url = $_POST["url"];
-
         try {
             // Tietokantayhteyden avaus.
-            $yhteys = new PDO($dsn, $user, $pwd, $options);    
+            $yhteys = new PDO($dsn, $user, $pwd, $options);
             
             // Valmistellaan kysely joka tarkastaa löytyykö lyhytosoite kannasta.
             $stmt = $yhteys->prepare("SELECT 1 FROM osoite WHERE tunniste = ?");
+            // Alustetaan kantaan lisäys.
+            $stmt2 = $yhteys->prepare("INSERT INTO osoite (tunniste, url, ip) VALUES (?, ?, ?)");
         
+            // Haetaan käyttäjän ip-osoite.
+            $ip = $_SERVER['REMOTE_ADDR'];
             // Esitellään hash muuttuja, johon lyhytosoite tullaan sijoittamaan.
             $hash = "";
 
-            // Luodaan lyhytosoitteita niin kauan kunnes löytyy
-            // sellainen jota kannassa ei vielä ole.
-            while ($hash == "") {
+            // Katsotaan löytyykö käyttäjän syöttämä lyhytosoite kannasta
+            $stmt->execute([$omahash]);
+            $result = $stmt->fetchColumn();
 
-                // Muodostetaan lyhytosoite-ehdokas.
-                $generated = generateHash(6);
+            if($result) {
+                $hasherror = "Lyhytosoite on jo käytössä.";
+            } else if (!preg_match("/^[\p{L}\d\s]{0,10}$/iu", $omahash)) {
+                $hasherror = "Virheellinen lyhytosoite. Pituus max 10 merkkiä, vain kirjaimia ja numeroita.";
+            } else {
 
-                // Tarkistetaan, löytyykö lyhytosoitetta kannasta.
-                $stmt->execute([$generated]);
-                $result = $stmt->fetchColumn();
-                if (!$result) {
-                    // Lyhytosoitetta ei ole kannassa, tallennetaan sen muuttujaan.
-                    $hash = $generated;
+                if (!trim($omahash)) {
+
+                    // Luodaan lyhytosoitteita niin kauan kunnes löytyy
+                    // sellainen jota kannassa ei vielä ole.
+                    while ($hash == "") {
+                        // Muodostetaan lyhytosoite-ehdokas.
+                        $generated = generateHash(6);
+
+                        // Tarkistetaan, löytyykö lyhytosoitetta kannasta.
+                        $stmt->execute([$generated]);
+                        $result2 = $stmt->fetchColumn();
+                        if (!$result2) {
+                            // Lyhytosoitetta ei ole kannassa, tallennetaan sen muuttujaan.
+                            $hash = $generated;
+                        }
+                    }
+
+                } else {
+                    $hash = str_replace(" ","",$omahash);
                 }
 
+                // Lisätään kantaan muuttujien arvoilla.
+                $stmt2->execute([$hash, $url, $ip]);
+
+                // Osoite on lisätty kantaan, muodostetaan käyttäjälle tietosivu.
+                $pagestatus = 1;
+                $shorturl = $baseurl . $hash;
             }
 
-            // Haetaan käyttäjän ip-osoite.
-            $ip = $_SERVER['REMOTE_ADDR'];
-
-            // Alustetaan kantaan lisäys.
-            $stmt2 = $yhteys->prepare("INSERT INTO osoite (tunniste, url, ip) VALUES (?, ?, ?)");
-
-            // Suoritetaan muuttujien arvoilla.
-            $stmt2->execute([$hash, $url, $ip]);
-
-            // Osoite on lisätty kantaan, muodostetaan käyttäjälle tietosivu.
-            $pagestatus = 1;
-            $shorturl = $baseurl . $hash;
-            
         } catch (PDOException $e) {
             // Virhe avaamisessa, tulostetaan virheilmoitus.
             $pagestatus = -2;
@@ -170,12 +189,12 @@ if (isset($_GET["hash"])) {
                     <form action='' method='POST'>
                         <label for='url'>Syötä lyhennettävä osoite</label>
                         <div class='url'>
-                            <input type='text' id='url' name='url' placeholder='tosi pitkä osoite'>
+                            <input type='text' id='url' name='url' placeholder='tosi pitkä osoite' value="<?=$url?>">
                             <input type='submit' name='shorten' value='lyhennä'>
                         </div>
                         <div class='formerror'><?=$urlerror?></div>
                         <label for="omahash">Syötä oma lyhytosoite</label>
-                        <input type="text" name="omahash" id="omahash" placeholder="valinnainen kenttä">
+                        <input type="text" name="omahash" id="omahash" placeholder="valinnainen kenttä" value="<?=$omahash?>">
                         <div class='formerror'><?=$hasherror?></div>
                     </form>
                 </div>
