@@ -13,9 +13,11 @@ $pagestatus = 0;
 // Tallennetaan perusosoite muuttujaan
 $baseurl = "https://neutroni.hayo.fi/~akoivu/redirect-custom/";
 
-// Esitellään muuttuja johon tarvittaessa tallennetaan virheviesti,
-// jos url on virheellinen.
+// Esitellään muuttujat joihin tarvittaessa tallennetaan virheviesti,
+// ...jos url on virheellinen.
 $urlerror = "";
+// ...jos hash virheellinen.
+$hasherror = "";
 
 // Määritellään yhteys-muuttujat.
 // Tietokannan nimi, käyttäjä ja salasana, haetaan palvelimen ympäristömuuttujista.
@@ -164,14 +166,18 @@ if (isset($_GET["hash"])) {
             ?>
                 <div class='form'>
                     <p>Tällä palvelulla voit lyhentää pitkän osoitteen lyhyeksi. Syötä alla olevaan kenttään pitkä osoite ja paina nappia, saat käyttöösi lyhytosoitteen, jota voit jakaa eteenpäin.</p>
+                    <p>Halutessasi voit myös luoda oman lyhytosoitteen. Syötä osoite-kentän alla olevaan kenttään haluamasi, max 10 merkkiä pitkä kirjain-numerokoodi. Mikäli kenttä jää tyhjäksi, luodaan sinulle sattumanvarainen lyhytosoite.</p>
                     <form action='' method='POST'>
                         <label for='url'>Syötä lyhennettävä osoite</label>
                         <div class='url'>
                             <input type='text' id='url' name='url' placeholder='tosi pitkä osoite'>
                             <input type='submit' name='shorten' value='lyhennä'>
                         </div>
+                        <div class='formerror'><?=$urlerror?></div>
+                        <label for="omahash">Syötä oma lyhytosoite</label>
+                        <input type="text" name="omahash" id="omahash" placeholder="valinnainen kenttä">
+                        <div class='formerror'><?=$hasherror?></div>
                     </form>
-                    <div class='urlerror'><?=$urlerror?></div>
                 </div>
             <?php 
                 }
